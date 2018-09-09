@@ -1,7 +1,7 @@
 This fork of [ColorChord] has a modified embedded8266 version which support broadcast of LED sound data via UDP, enabling
 other esp8266 clients to receive the LED brightness data and drive their own WS281x strings.
 
-It is enabled by setting the new BROADCAST_PORT in user.cfg. It can be disabled - along with the UDP command server - by defining DISABLE_SERVICE_UDP. LED brightness data is broadcast to the whole /24 subnet as packets which begin with byte value 0xFF, followed by as many rgp triplets of bytes as there are LED's defined by USE_NUM_LIN_LEDS. 
+It is enabled by setting the new BROADCAST_PORT in user.cfg. It can be disabled - along with the UDP command server - by defining DISABLE_SERVICE_UDP. LED brightness data is broadcast to the whole /24 subnet as packets which begin with byte value 0xFF, followed by as many RGB triplets of bytes as there are LED's defined by USE_NUM_LIN_LEDS. 
 
 Currently, the broadcast works smoothest when a intermediary Wifi Access Point is used, with Colorchord and clients connecting in STATION mode - for some reason, using the colorchord esp in AP mode results in slower packet rate and they sort of come in "bursts" instead of a smooth, continual stream.
 
@@ -21,7 +21,9 @@ This version also registers itself under mDNS as a server named "colorchord", so
 	...
 ``` 
 NOTE that to get this to work with the current version of ESP8266mDNS, I had to tweak the code in ESP8266mDNS.cpp, aparently because the colorchord mDNS service announcement doesn't include a server name after the SRV record, which was breaking mDNS. I changed line ~718 to :
+
          if (tmp8 > 0 && answerRdlength - (6 + 1 + tmp8) > 0) { // (added the check for tmp8 > 0)
+
 See: (https://github.com/esp8266/Arduino/issues/5114)
 
 ColorChord

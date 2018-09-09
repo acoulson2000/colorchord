@@ -19,6 +19,7 @@
 #include "ets_sys.h"
 #include "gpio.h"
 //#define PROFILE
+//#define DISABLE_SERVICE_UDP
 
 #define PORT 7777
 #define SERVER_TIMEOUT 1500
@@ -30,7 +31,13 @@
 
 struct CCSettings CCS;
 static volatile os_timer_t some_timer;
+static volatile os_timer_t udp_timer;
 static struct espconn *pUdpServer;
+
+#ifndef DISABLE_SERVICE_UDP
+LOCAL struct espconn pUdpBroadcaster;
+LOCAL esp_udp udp;
+#endif
 
 void EnterCritical();
 void ExitCritical();
@@ -142,14 +149,26 @@ static void ICACHE_FLASH_ATTR myTimer(void *arg)
 //	ws2812_push( ledout, 6 );
 }
 
+#ifndef DISABLE_SERVICE_UDP
+//UDP broadcast Timer event.
+static void ICACHE_FLASH_ATTR udpTimer(void *arg)
+{
+	uint8_t udpOut[USE_NUM_LIN_LEDS*3+1];
+	os_memcpy(&udpOut[1], ledOut, USE_NUM_LIN_LEDS*3);
+	udpOut[0] = 255;//udpOut[1] = 72;udpOut[2] = 73;udpOut[3] = 10;udpOut[4] = 13;
+
+        espconn_send(&pUdpBroadcaster, udpOut, USE_NUM_LIN_LEDS*3+1);
+        //err = espconn_delete(&pUdpBroadcaster);
+}
+#endif
 
 //Called when new packet comes in.
 static void ICACHE_FLASH_ATTR udpserver_recv(void *arg, char *pusrdata, unsigned short len)
 {
 	struct espconn *pespconn = (struct espconn *)arg;
-//	uint8_t buffer[MAX_FRAME];
+	uint8_t buffer[MAX_FRAME];
 //	uint8_t ledout[] = { 0x00, 0xff, 0xaa, 0x00, 0xff, 0xaa, };
-	uart0_sendStr("X");
+//	uart0_sendStr("X");
 	ws2812_push( pusrdata+3, len );
 }
 
@@ -177,18 +196,34 @@ void ICACHE_FLASH_ATTR user_init(void)
 
 	CSPreInit();
 
-    pUdpServer = (struct espconn *)os_zalloc(sizeof(struct espconn));
+	SetServiceName( "colorchord" );
+	AddMDNSName(    "esp82xx" );
+	AddMDNSName(    "espcom" );
+	AddMDNSService( "_colorchord._tcp",    "A Colorchord Webserver", WEB_PORT );
+	AddMDNSService( "_espcom._udp",  "ESP82XX Comunication", COM_PORT );
+	AddMDNSService( "_esp82xx._udp", "ESP82XX Backend",      BACKEND_PORT );
+
+#ifndef DISABLE_SERVICE_UDP
+	pUdpBroadcaster.type = ESPCONN_UDP;
+	pUdpBroadcaster.state = ESPCONN_NONE;
+	pUdpBroadcaster.proto.udp = &udp;
+	IP4_ADDR((ip_addr_t *)pUdpBroadcaster.proto.udp->remote_ip, 255, 255, 255, 255);
+	pUdpBroadcaster.proto.udp->remote_port = BROADCAST_PORT; // Remote port
+	uint8_t err = espconn_create(&pUdpBroadcaster);
+
+	pUdpServer = (struct espconn *)os_zalloc(sizeof(struct espconn));
 	ets_memset( pUdpServer, 0, sizeof( struct espconn ) );
 	espconn_create( pUdpServer );
 	pUdpServer->type = ESPCONN_UDP;
 	pUdpServer->proto.udp = (esp_udp *)os_zalloc(sizeof(esp_udp));
-	pUdpServer->proto.udp->local_port = 7777;
+	pUdpServer->proto.udp->local_port = COM_PORT;
 	espconn_regist_recvcb(pUdpServer, udpserver_recv);
 
-	if( espconn_create( pUdpServer ) )
+	if( err || espconn_create( pUdpServer ) )
 	{
 		while(1) { uart0_sendStr( "\r\nFAULT\r\n" ); }
 	}
+#endif
 
 	CSInit();
 
@@ -199,6 +234,13 @@ void ICACHE_FLASH_ATTR user_init(void)
 	os_timer_disarm(&some_timer);
 	os_timer_setfn(&some_timer, (os_timer_func_t *)myTimer, NULL);
 	os_timer_arm(&some_timer, 100, 1);
+
+#ifndef DISABLE_SERVICE_UDP
+	//UDP broadcast Timer
+	os_timer_disarm(&udp_timer);
+	os_timer_setfn(&udp_timer, (os_timer_func_t *)udpTimer, NULL);
+	os_timer_arm(&udp_timer, 21, 1);
+#endif
 
 	//Set GPIO16 for Input
     WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
@@ -245,5 +287,6 @@ void ExitCritical()
 	//ets_intr_unlock();
 	ContinueHPATimer();
 }
+
 
 
