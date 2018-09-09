@@ -1,4 +1,4 @@
-This fork of [ColorChord] has a modified embedded8266 version which support broadcast of LED sound data via UDP, enabling
+This fork of [ColorChord](https://github.com/cnlohr/colorchord) has a modified embedded8266 version which support broadcast of LED sound data via UDP, enabling
 other esp8266 clients to receive the LED brightness data and drive their own WS281x strings.
 
 It is enabled by setting the new BROADCAST_PORT in user.cfg. It can be disabled - along with the UDP command server - by defining DISABLE_SERVICE_UDP. LED brightness data is broadcast to the whole /24 subnet as packets which begin with byte value 0xFF, followed by as many RGB triplets of bytes as there are LED's defined by USE_NUM_LIN_LEDS. 
