@@ -53,8 +53,6 @@ void UpdateRainbow();
 //For solid leds
 void UpdateSolid();
 
-void UpdateTwinkle();
-
 //All leds offs
 void UpdateOff();
 
