@@ -241,6 +241,7 @@ int ICACHE_FLASH_ATTR CustomCommand(char * buffer, int retsize, char *pusrdata, 
 		}
 		else if( pusrdata[2] == 'W' || pusrdata[2] == 'w' )
 		{
+			needsLoad = true;
 			parameters+=2;
 			char * name = ParamCaptureAndAdvance();
 			int val = ParamCaptureAndAdvanceInt();
@@ -275,4 +276,5 @@ int ICACHE_FLASH_ATTR CustomCommand(char * buffer, int retsize, char *pusrdata, 
 	}
 	return -1;
 }
+
 

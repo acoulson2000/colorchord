@@ -62,15 +62,28 @@ static void NewFrame()
 
 	//uint8_t led_outs[NUM_LIN_LEDS*3];
 	int i;
-	HandleFrameInfo();
 
 	switch( COLORCHORD_OUTPUT_DRIVER )
 	{
 	case 0:
+		HandleFrameInfo();
 		UpdateLinearLEDs();
 		break;
 	case 1:
+		HandleFrameInfo();
 		UpdateAllSameLEDs();
+		break;
+	case 2: 
+		UpdateRainbow();
+		break;
+	case 3: 
+		UpdateSolid();
+		break;
+	case 4: 
+		UpdateOff();
+		break;
+	case 5: 
+		UpdateTwinkle();
 		break;
 	};
 
@@ -134,6 +147,8 @@ static void procTask(os_event_t *events)
 //Timer event.
 static void ICACHE_FLASH_ATTR myTimer(void *arg)
 {
+printf( "myTimer hpa_is_paused_for_wifi:%d printed_ip:%d\n", hpa_is_paused_for_wifi,printed_ip);
+
 	CSTick( 1 );
 
 	if( hpa_is_paused_for_wifi && printed_ip )
@@ -153,12 +168,14 @@ static void ICACHE_FLASH_ATTR myTimer(void *arg)
 //UDP broadcast Timer event.
 static void ICACHE_FLASH_ATTR udpTimer(void *arg)
 {
-	uint8_t udpOut[USE_NUM_LIN_LEDS*3+1];
-	os_memcpy(&udpOut[1], ledOut, USE_NUM_LIN_LEDS*3);
-	udpOut[0] = 255;//udpOut[1] = 72;udpOut[2] = 73;udpOut[3] = 10;udpOut[4] = 13;
+	if (CCS.gCOLORCHORD_ACTIVE == 1) {
+		uint8_t udpOut[USE_NUM_LIN_LEDS*3+1];
+		os_memcpy(&udpOut[1], ledOut, USE_NUM_LIN_LEDS*3);
+		udpOut[0] = 255;//udpOut[1] = 72;udpOut[2] = 73;udpOut[3] = 10;udpOut[4] = 13;
 
-        espconn_send(&pUdpBroadcaster, udpOut, USE_NUM_LIN_LEDS*3+1);
-        //err = espconn_delete(&pUdpBroadcaster);
+		espconn_send(&pUdpBroadcaster, udpOut, USE_NUM_LIN_LEDS*3+1);
+		//err = espconn_delete(&pUdpBroadcaster);
+	}
 }
 #endif
 
@@ -198,6 +215,7 @@ void ICACHE_FLASH_ATTR user_init(void)
 
 	SetServiceName( "colorchord" );
 	AddMDNSName(    "esp82xx" );
+	AddMDNSName(    "colorchord" );
 	AddMDNSName(    "espcom" );
 	AddMDNSService( "_colorchord._tcp",    "A Colorchord Webserver", WEB_PORT );
 	AddMDNSService( "_espcom._udp",  "ESP82XX Comunication", COM_PORT );
