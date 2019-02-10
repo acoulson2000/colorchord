@@ -66,6 +66,7 @@ static void NewFrame()
 	switch( COLORCHORD_OUTPUT_DRIVER )
 	{
 	case 0:
+	case 6:
 		HandleFrameInfo();
 		UpdateLinearLEDs();
 		break;

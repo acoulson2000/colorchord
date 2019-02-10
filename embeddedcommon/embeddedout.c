@@ -417,38 +417,58 @@ uint32_t EHSVtoHEX( uint8_t hue, uint8_t sat, uint8_t val )
 
 	hue -= SIXTH1; //Off by 60 degrees.
 
-	//TODO: There are colors that overlap here, consider 
-	//tweaking this to make the best use of the colorspace.
+	// This supports a mode (COLORCHORD_OUTPUT_DRIVER=6) where notes are mapped to
+	// 6 specific colors. These particular colors are Mardis Gras oriented.
 
-	if( hue < SIXTH1 ) //Ok: Yellow->Red.
-	{
-		or = 255;
-		og = 255 - ((uint16_t)hue * 255) / (SIXTH1);
-	}
-	else if( hue < SIXTH2 ) //Ok: Red->Purple
-	{
-		or = 255;
-		ob = (uint16_t)hue*255 / SIXTH1 - 255;
-	}
-	else if( hue < SIXTH3 )  //Ok: Purple->Blue
-	{
-		ob = 255;
-		or = ((SIXTH3-hue) * 255) / (SIXTH1);
-	}
-	else if( hue < SIXTH4 ) //Ok: Blue->Cyan
-	{
-		ob = 255;
-		og = (hue - SIXTH3)*255 / SIXTH1;
-	}
-	else if( hue < SIXTH5 ) //Ok: Cyan->Green.
-	{
-		og = 255;
-		ob = ((SIXTH5-hue)*255) / SIXTH1;
-	}
-	else //Green->Yellow
-	{
-		og = 255;
-		or = (hue - SIXTH5) * 255 / SIXTH1;
+	if ( COLORCHORD_OUTPUT_DRIVER == 6) {
+		if( hue < SIXTH1 ) {
+			og = 170;
+		} else if( hue < SIXTH2 ) {
+			or = 150;
+			og = 150;
+		} else if( hue < SIXTH3 ) {
+			or = 95;
+			ob = 95;
+		} else if( hue < SIXTH4 ) {
+			og = 170;
+		} else if( hue < SIXTH5 ) {
+			or = 150;
+			og = 150;
+		} else {
+			or = 95;
+			ob = 95;
+		}
+	} else {
+		if( hue < SIXTH1 ) //Ok: Yellow->Red.
+		{
+			or = 255;
+			og = 255 - ((uint16_t)hue * 255) / (SIXTH1);
+		}
+		else if( hue < SIXTH2 ) //Ok: Red->Purple
+		{
+			or = 255;
+			ob = (uint16_t)hue*255 / SIXTH1 - 255;
+		}
+		else if( hue < SIXTH3 )  //Ok: Purple->Blue
+		{
+			ob = 255;
+			or = ((SIXTH3-hue) * 255) / (SIXTH1);
+		}
+		else if( hue < SIXTH4 ) //Ok: Blue->Cyan
+		{
+			ob = 255;
+			og = (hue - SIXTH3)*255 / SIXTH1;
+		}
+		else if( hue < SIXTH5 ) //Ok: Cyan->Green.
+		{
+			og = 255;
+			ob = ((SIXTH5-hue)*255) / SIXTH1;
+		}
+		else //Green->Yellow
+		{
+			og = 255;
+			or = (hue - SIXTH5) * 255 / SIXTH1;
+		}
 	}
 
 	uint16_t rv = val;
@@ -473,6 +493,6 @@ uint32_t EHSVtoHEX( uint8_t hue, uint8_t sat, uint8_t val )
 	og >>= 8;
 	ob >>= 8;
 
-	return or | (og<<8) | ((uint32_t)ob<<16);
+	return og | (or<<8) | ((uint32_t)ob<<16);
 }
 
